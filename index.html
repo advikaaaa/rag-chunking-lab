@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChunkLab: Chunking for RAG</title>
+  <meta name="description" content="A 45-minute interactive lesson on text chunking and document processing for Retrieval-Augmented Generation (RAG): theory, a live chunking playground, fix-the-bot challenges, a quiz and flashcards.">
+  <meta name="author" content="Advika Awasthi">
+  <meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f141b" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="ChunkLab: Chunking for RAG">
+  <meta property="og:description" content="Learn how chunking decides what a RAG chatbot can answer, then experiment with it live.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/og-image.svg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try {
+      var t = localStorage.getItem('chunklab:theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=JetBrains+Mono:wght@400;700;800&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#main">Skip to the lesson</a>
+
+  <header class="topbar">
+    <button class="icon-btn toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
+      <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg><span class="label-text">Contents</span>
+    </button>
+    <a class="brand" href="#s-intro" aria-label="ChunkLab home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="4" width="18" height="11" rx="3" fill="#ffb877"/><rect x="12" y="10" width="18" height="11" rx="3" fill="#7fbfff" opacity=".9"/><rect x="6" y="17" width="18" height="11" rx="3" fill="#0b6b6b"/></svg>
+      <span><span data-site-title>ChunkLab</span> <small data-site-subtitle>Chunking for RAG</small></span>
+    </a>
+    <div class="progress-wrap">
+      <div class="progress" role="progressbar" aria-label="Lesson progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span class="progress-fill"></span>
+      </div>
+      <span class="progress-label" aria-hidden="true">0 of 10 done</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" type="button" id="glossary-open" aria-haspopup="dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-book"/></svg><span class="label-text">Glossary</span>
+      </button>
+      <button class="icon-btn" type="button" id="presenter-toggle" aria-pressed="false" title="Larger text for presenting on screen">
+        <svg class="icon" aria-hidden="true"><use href="#i-screen"/></svg><span class="visually-hidden">Presenter mode</span>
+      </button>
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Switch to dark theme">
+        <svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <noscript><p class="noscript">The lesson text works without JavaScript, but the interactive demos, playground, challenges and quiz need it. Please enable JavaScript.</p></noscript>
+
+  <div class="layout">
+    <nav id="toc" class="toc" aria-label="Lesson contents">
+      <h2>45-minute lesson</h2>
+      <ol id="toc-list"></ol>
+      <div class="toc-footer">
+        <span class="small muted" id="toc-progress-text">Progress is saved in this browser.</span>
+        <button type="button" class="btn btn-sm btn-ghost" id="reset-progress">Reset progress</button>
+      </div>
+    </nav>
+
+    <main id="main" tabindex="-1">
+
+      <!-- 0. HERO ============================================================ -->
+      <section id="s-intro" class="lesson-section hero" data-section data-title="Start here" data-time="1">
+        <span class="eyebrow">Interactive lesson · Generative AI</span>
+        <h1>Chunking for RAG: cut documents so the bot can answer</h1>
+        <p class="lede">A chatbot built on your documents can only answer from the pieces it finds. In this lesson you'll see how splitting documents into <a data-term="chunk">chunks</a> decides what those pieces are, and you'll fix a bot that gets answers wrong because of bad chunking.</p>
+        <div class="hero-meta">
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>About 45 minutes</span>
+          <span class="badge">Beginner to intermediate</span>
+          <span class="badge">No setup needed</span>
+        </div>
+
+        <div class="hero-grid">
+          <div class="card">
+            <h2 class="h3" style="font-size:1.2rem;margin-top:0">By the end, you will be able to</h2>
+            <ol class="objectives">
+              <li>Explain why <a data-term="rag">RAG</a> systems split documents into chunks, and what chunk size and overlap trade off.</li>
+              <li>Compare five chunking strategies and pick one that suits a given document type.</li>
+              <li>Clean and structure raw documents (PDF extracts, tables, headings) before chunking.</li>
+              <li>Diagnose retrieval failures caused by chunking, and fix them.</li>
+              <li>Measure chunking quality with an <a data-term="evaluation-set">evaluation set</a> and <a data-term="hit-rate">hit rate@k</a>.</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h2 style="font-size:1.2rem;margin-top:0">How to use this page</h2>
+            <dl class="howto">
+              <dt>Learning on your own</dt>
+              <dd>Go top to bottom. Each section shows its time estimate. Do every <strong>Try it</strong> box. It's where the learning happens.</dd>
+              <dt>Words with a dotted underline</dt>
+              <dd>Click one (like <a data-term="token">token</a>) to open a plain-language definition in the glossary, without leaving the page.</dd>
+              <dt>Presenting to a class</dt>
+              <dd>Use the <strong>presenter</strong> button in the top bar for larger text. Each section is designed to work as one "slide stop".</dd>
+              <dt>Progress</dt>
+              <dd>Sections tick off as you finish them, and are saved in this browser only.</dd>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1. HOOK ============================================================ -->
+      <section id="s-hook" class="lesson-section" data-section data-title="Why did the bot get it wrong?" data-time="2">
+        <div class="section-head">
+          <span class="section-num">01</span>
+          <h2>Why did the bot get it wrong?</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>2 min</span>
+        </div>
+        <p>Meet the support bot for NimbusDesk, a fictional help-desk company. It answers customers using the company's own policy documents. A customer whose headset broke after five weeks asks a simple question:</p>
+
+        <div class="chat" aria-label="Example conversation with a support bot">
+          <div class="msg msg-user"><span class="msg-who">Customer</span>My headset stopped working. Can I get a refund after 30 days?</div>
+          <div class="msg msg-bot wrong"><span class="msg-who">Support bot</span>I'm sorry, refunds are only approved within 30 days of delivery, so this order isn't eligible.
+            <span class="msg-flag">✗ Wrong. The policy has an exception for defective items.</span></div>
+        </div>
+
+        <p style="margin-top:1em">The model didn't "forget" the policy. It never saw the whole rule. Before answering, the bot ran <a data-term="retrieval">retrieval</a>: it searched the policy for the most relevant chunk and pasted that into the prompt. Here is what it got:</p>
+
+        <button type="button" class="btn btn-primary" id="hook-reveal-btn" aria-expanded="false" aria-controls="hook-reveal">Show what retrieval handed the bot</button>
+        <div id="hook-reveal" class="reveal" hidden>
+          <div class="retrieved-view" id="hook-chunk">Loading…</div>
+          <p class="small muted" id="hook-caption" style="margin-top:8px"></p>
+          <div class="callout key"><span class="callout-title">What went wrong</span>
+            <p>The document was cut into fixed-size pieces of 120 tokens. The cut landed in the middle of the exception clause, so the retrieved chunk stops at "<span id="hook-cut-words">…</span>" and the condition (defective or damaged items) never reached the model.</p>
+          </div>
+        </div>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>The LLM can only answer from what retrieval hands it, and <strong>chunking decides what retrieval can hand it</strong>. You'll fix this exact bug in section 6.</p>
+        </div>
+      </section>
+
+      <!-- 2. THEORY ========================================================== -->
+      <section id="s-theory" class="lesson-section" data-section data-title="What chunking is and why we need it" data-time="6">
+        <div class="section-head">
+          <span class="section-num">02</span>
+          <h2>What chunking is, and why we need it</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>6 min</span>
+        </div>
+
+        <h3>RAG in one picture</h3>
+        <p><a data-term="rag">Retrieval-Augmented Generation</a> has two halves. <strong>Indexing</strong> happens once per document, ahead of time. <strong>Querying</strong> happens every time someone asks a question. Chunking sits in the middle of indexing, and everything after it inherits its decisions.</p>
+        <figure>
+          <div class="diagram-scroll">
+            <svg class="pipeline-svg" viewBox="0 0 760 236" role="img" aria-labelledby="pipe-title pipe-desc">
+              <title id="pipe-title">The RAG pipeline</title>
+              <desc id="pipe-desc">Indexing: documents, parse and clean, chunk (highlighted), embed, store in a vector database. Querying: question, embed the question, retrieve the top-k chunks from the vector database, the LLM generates an answer.</desc>
+              <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10z"/></marker></defs>
+              <rect class="lane-bg" x="0" y="0" width="760" height="104" rx="12"/>
+              <rect class="lane-bg" x="0" y="128" width="760" height="104" rx="12"/>
+              <text class="lane" x="16" y="22">INDEXING · ONCE PER DOCUMENT</text>
+              <text class="lane" x="16" y="150">QUERYING · EVERY QUESTION</text>
+              <g>
+                <rect class="box" x="16" y="38" width="120" height="48" rx="8"/><text x="76" y="67" text-anchor="middle">Documents</text>
+                <rect class="box" x="162" y="38" width="128" height="48" rx="8"/><text x="226" y="67" text-anchor="middle">Parse &amp; clean</text>
+                <rect class="box hl" x="316" y="38" width="116" height="48" rx="8"/><text class="hl-text" x="374" y="67" text-anchor="middle">Chunk ✂</text>
+                <rect class="box" x="458" y="38" width="112" height="48" rx="8"/><text x="514" y="67" text-anchor="middle">Embed</text>
+                <rect class="box" x="596" y="38" width="148" height="48" rx="8"/><text x="670" y="60" text-anchor="middle">Store in</text><text x="670" y="76" text-anchor="middle">vector DB</text>
+                <path class="arrow" d="M136 62H160" marker-end="url(#ah)"/>
+                <path class="arrow" d="M290 62H314" marker-end="url(#ah)"/>
+                <path class="arrow" d="M432 62H456" marker-end="url(#ah)"/>
+                <path class="arrow" d="M570 62H594" marker-end="url(#ah)"/>
+              </g>
+              <g>
+                <rect class="box" x="16" y="166" width="120" height="48" rx="8"/><text x="76" y="195" text-anchor="middle">Question</text>
+                <rect class="box" x="162" y="166" width="128" height="48" rx="8"/><text x="226" y="188" text-anchor="middle">Embed the</text><text x="226" y="204" text-anchor="middle">question</text>
+                <rect class="box" x="316" y="166" width="254" height="48" rx="8"/><text x="443" y="188" text-anchor="middle">Retrieve top-k chunks</text><text x="443" y="204" text-anchor="middle" style="font-weight:400">(nearest in the vector DB)</text>
+                <rect class="box" x="596" y="166" width="148" height="48" rx="8"/><text x="670" y="188" text-anchor="middle">LLM writes</text><text x="670" y="204" text-anchor="middle">the answer</text>
+                <path class="arrow" d="M136 190H160" marker-end="url(#ah)"/>
+                <path class="arrow" d="M290 190H314" marker-end="url(#ah)"/>
+                <path class="arrow" d="M570 190H594" marker-end="url(#ah)"/>
+                <path class="arrow" d="M670 86V104C670 120 600 120 520 120C470 120 443 130 443 164" marker-end="url(#ah)"/>
+              </g>
+            </svg>
+          </div>
+          <figcaption>The chunk step (highlighted) sets the units that are embedded, stored, retrieved and finally read by the LLM.</figcaption>
+        </figure>
+
+        <h3>Why chunk at all?</h3>
+        <div class="reason-grid">
+          <div class="card"><h4>Limited context window</h4><p>An <a data-term="llm">LLM</a> can only take in so many tokens per request (its <a data-term="context-window">context window</a>). You can't paste a whole knowledge base into every prompt.</p></div>
+          <div class="card"><h4>Precise retrieval</h4><p>Search returns whole units. Small, focused units match a question precisely; a 40-page manual "matches" everything a little.</p></div>
+          <div class="card"><h4>Cost and speed</h4><p>Every token you send is paid for and processed. Sending three relevant paragraphs is cheaper and faster than sending thirty.</p></div>
+          <div class="card"><h4>Embedding input limits</h4><p>An <a data-term="embedding-model">embedding model</a> also has a maximum input length. Text beyond it is usually truncated, so it never makes it into the vector.</p></div>
+        </div>
+
+        <div class="callout analogy"><span class="callout-title">Analogy</span>
+          <p>Chunking is like turning a textbook into index cards for revision. Make the cards too small and each one loses its meaning ("It costs ₹499." What does?). Make them too big and you can't find the one fact you need quickly.</p>
+        </div>
+
+        <h3>Tokens, not characters</h3>
+        <p>Models don't count characters or words. They count <a data-term="token">tokens</a>, the pieces a <a data-term="tokenizer">tokenizer</a> cuts text into. A common English word is often one token; rarer words, numbers and symbols split into several. A rough rule of thumb for English is <strong>about 4 characters per token</strong>, but it varies by tokenizer and language. Type below to see it live.</p>
+
+        <div class="demo" id="tokenizer-demo">
+          <div class="demo-head">
+            <h4>Live tokenizer</h4>
+            <span class="badge" data-tokenizer-badge>Loading tokenizer…</span>
+          </div>
+          <label for="tok-input" class="visually-hidden">Text to tokenize</label>
+          <textarea id="tok-input" rows="3">Chunking splits long documents into pieces. The Team plan costs ₹499/month, and "unbelievably" is not one token!</textarea>
+          <div class="token-view" id="tok-view" aria-live="polite" aria-label="Tokens"></div>
+          <ul class="stat-row" id="tok-stats"></ul>
+        </div>
+
+        <h3>The core trade-off: chunk size</h3>
+        <p><a data-term="chunk-size">Chunk size</a> is a balance, and both extremes fail in different ways:</p>
+        <ul>
+          <li><strong>Too small:</strong> fragments lose their context ("It costs ₹499 per month." Which plan?), and one answer gets scattered across several chunks.</li>
+          <li><strong>Too large:</strong> one chunk covers many topics, so its embedding is a blurry average and matches are less <a data-term="precision">precise</a>. You also send more irrelevant text to the LLM.</li>
+        </ul>
+
+        <div class="demo" id="tradeoff-demo">
+          <div class="demo-head">
+            <h4>Try it: find the sweet spot</h4>
+            <span class="badge">Question: "How much is the Team plan?"</span>
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="tradeoff-size">Chunk size</label><span class="field-value" id="tradeoff-size-value"></span></div>
+            <input type="range" id="tradeoff-size" min="8" max="140" step="1" value="12">
+          </div>
+          <div class="mini-chunks" id="tradeoff-view" style="margin-top:12px"></div>
+          <div class="verdict" id="tradeoff-verdict" role="status"></div>
+          <p class="small muted" style="margin-top:8px">Fixed-size chunks with no overlap, measured in tokens. Drag the slider and watch which chunk holds the price.</p>
+        </div>
+
+        <h3>Overlap: a safety margin at the edges</h3>
+        <p><a data-term="chunk-overlap">Chunk overlap</a> repeats a little text from the end of one chunk at the start of the next. If an important sentence sits on a boundary, it will usually appear whole in at least one of the two chunks.</p>
+        <div class="overlap-visual" aria-hidden="true">
+          <div class="ov-row"><span>no overlap</span><div class="ov-track">
+            <span class="ov-bar chunk-seg" data-c="0" style="left:0;width:33%">1</span>
+            <span class="ov-bar chunk-seg" data-c="1" style="left:33.5%;width:33%">2</span>
+            <span class="ov-bar chunk-seg" data-c="2" style="left:67%;width:33%">3</span></div></div>
+          <div class="ov-row"><span>overlap</span><div class="ov-track">
+            <span class="ov-bar chunk-seg" data-c="0" style="left:0;width:30%">1</span>
+            <span class="ov-bar chunk-seg overlap" data-c="1" style="left:24%;width:30%">2</span>
+            <span class="ov-bar chunk-seg overlap" data-c="2" style="left:48%;width:30%">3</span>
+            <span class="ov-bar chunk-seg overlap" data-c="3" style="left:72%;width:28%">4</span></div></div>
+        </div>
+        <p class="small muted">Hatched areas are text that appears in two chunks.</p>
+        <p>Overlap isn't free: you get <strong>more chunks</strong>, <strong>more storage</strong>, and some <strong>duplicate text</strong> in your results. Each new chunk only moves forward by <code>chunk_size − overlap</code>, so the overlap <strong>must be smaller than the chunk size</strong>. Otherwise the splitter would never move forward. A modest overlap, often somewhere around 10–20% of the chunk size, is a common starting point to tune from.</p>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>Chunks are the units your system can find and the LLM can read. Size trades context against precision; overlap protects the boundaries at the cost of duplication. Count both in tokens.</p>
+        </div>
+      </section>
+
+      <!-- 3. STRATEGIES ====================================================== -->
+      <section id="s-strategies" class="lesson-section" data-section data-title="Chunking strategies" data-time="5">
+        <div class="section-head">
+          <span class="section-num">03</span>
+          <h2>Chunking strategies explained</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>5 min</span>
+        </div>
+        <p>All strategies answer the same question: <em>where is it OK to cut?</em> Each mini-preview below runs the real chunker from this lesson on the same short pricing snippet. Colours and numbers mark the chunks.</p>
+        <p class="small"><span class="chunk-swatch" style="background:var(--c0)"></span> <span class="chunk-swatch" style="background:var(--c1)"></span> chunk colours (number badges mark each start) · <span class="chunk-swatch overlap"></span> overlap</p>
+
+        <div class="strategy-grid" id="strategy-grid">
+          <article class="card strategy-card">
+            <h3><span class="num">1</span>Fixed-size</h3>
+            <p>Cut every <em>N</em> tokens (or characters), optionally with overlap. Simple and predictable, and it ignores meaning completely, so it happily cuts mid-sentence.</p>
+            <div class="mini-chunks" data-mini="fixed"></div>
+            <div class="pro-con"><div><b>Best for</b>Quick baselines, uniform text, logs</div><div><b>Watch out</b>Broken sentences, split tables</div></div>
+          </article>
+          <article class="card strategy-card">
+            <h3><span class="num">2</span>Sentence-based</h3>
+            <p>Split into sentences, then pack whole sentences into each chunk until the size limit. Boundaries always fall between sentences.</p>
+            <div class="mini-chunks" data-mini="sentence"></div>
+            <div class="pro-con"><div><b>Best for</b>Prose, articles, transcripts</div><div><b>Watch out</b>Very long sentences; ignores headings</div></div>
+          </article>
+          <article class="card strategy-card">
+            <h3><span class="num">3</span><a data-term="recursive-splitting">Recursive</a></h3>
+            <p>Try <a data-term="separator">separators</a> in order: paragraph <code>\n\n</code> → line <code>\n</code> → sentence <code>. </code> → word <code>" "</code> → character. Only go finer when a piece is still too big, then merge small pieces up to the limit. A popular general-purpose default.</p>
+            <div class="mini-chunks" data-mini="recursive"></div>
+            <div class="pro-con"><div><b>Best for</b>Most text, as a first choice</div><div><b>Watch out</b>Doesn't know tables or headings mean anything</div></div>
+          </article>
+          <article class="card strategy-card">
+            <h3><span class="num">4</span><a data-term="structure-aware">Structure-aware</a></h3>
+            <p>Follow the document's own structure: split at Markdown/HTML headings, keep tables and code blocks whole, and save the heading path (e.g. <code>Pricing › Plans</code>) as <a data-term="metadata">metadata</a>.</p>
+            <div class="mini-chunks" data-mini="markdown"></div>
+            <div class="pro-con"><div><b>Best for</b>Docs sites, manuals, READMEs, pricing pages</div><div><b>Watch out</b>Needs clean structure; huge sections still need sub-splitting</div></div>
+          </article>
+          <article class="card strategy-card">
+            <h3><span class="num">5</span><a data-term="semantic-chunking">Semantic</a> <span class="badge">advanced</span></h3>
+            <p>Embed every sentence, compare neighbours with <a data-term="cosine-similarity">cosine similarity</a>, and start a new chunk where the meaning shifts (the similarity drops below a threshold).</p>
+            <div class="mini-chunks semantic-illus"><span class="chunk-seg topic-a"><span class="chunk-badge">1</span>Starter is free for one agent. It keeps 30 days of history.</span> <span class="chunk-seg topic-b"><span class="chunk-badge">2</span>You can pay by card or UPI. Failed payments are retried after 3 days.</span></div>
+            <p class="small muted">Illustration: the topic changes from plans to payments, so a break goes there. Try the real thing in the Chunk Lab (it downloads a small model).</p>
+            <div class="pro-con"><div><b>Best for</b>Long, flowing text that changes topic</div><div><b>Watch out</b>Slower, needs an embedding model, threshold to tune</div></div>
+          </article>
+        </div>
+
+        <h3>Three more ideas worth knowing</h3>
+        <ul>
+          <li><a data-term="parent-child">Parent–child (small-to-big) retrieval</a>: search over small chunks for precision, then hand the LLM the larger parent section the match came from, for context.</li>
+          <li><a data-term="contextual-headers">Contextual chunk headers</a>: prepend the document title and section path to each chunk (or only to the text you embed/index) so a lone chunk still makes sense.</li>
+          <li><strong>Domain-specific splitting</strong>: code by function or class, chat logs by conversation turns, FAQs by question-and-answer pair.</li>
+        </ul>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>Better strategies cut where the document's meaning allows it: between sentences, at headings, around tables, at topic shifts. Start with recursive or structure-aware, and add context (headers, parents) when chunks lose meaning on their own.</p>
+        </div>
+      </section>
+
+      <!-- 4. DOCUMENT PROCESSING ============================================ -->
+      <section id="s-processing" class="lesson-section" data-section data-title="Document processing before chunking" data-time="5">
+        <div class="section-head">
+          <span class="section-num">04</span>
+          <h2>Document processing before chunking</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>5 min</span>
+        </div>
+        <p>Chunking can only be as good as the text it receives. In real projects, most "bad chunk" problems start one step earlier.</p>
+
+        <h3>1. Parsing: get the text out</h3>
+        <p><a data-term="parsing">Parsing</a> (or extraction) pulls text from PDFs, web pages, Word files and slides. Scanned PDFs are just images, so they need <a data-term="ocr">OCR</a> first. Layout matters: a two-column page read straight across mixes sentences from both columns, and tables often come out as a jumble of cells.</p>
+
+        <h3>2. Cleaning: remove the noise</h3>
+        <ul>
+          <li>Remove repeated headers, footers and page numbers (<a data-term="boilerplate">boilerplate</a>).</li>
+          <li>Fix words hyphenated across line breaks ("infor-↵mation" → "information").</li>
+          <li>Normalise whitespace: collapse extra spaces and unwrap hard line breaks inside paragraphs.</li>
+          <li>Strip web clutter such as navigation menus and cookie banners.</li>
+        </ul>
+
+        <div class="demo" id="clean-demo">
+          <div class="demo-head">
+            <h4>Try it: clean this text</h4>
+            <span class="badge" id="clean-savings">–</span>
+          </div>
+          <p class="small" style="margin-top:0">A raw extract from a (fictional) PDF policy. Switch on each cleaning step and watch the text and its token count change.</p>
+          <div class="toggle-row" role="group" aria-label="Cleaning steps">
+            <label class="check"><input type="checkbox" data-clean="headers"> Remove headers/footers</label>
+            <label class="check"><input type="checkbox" data-clean="hyphenation"> Fix hyphenation</label>
+            <label class="check"><input type="checkbox" data-clean="whitespace"> Normalise whitespace</label>
+          </div>
+          <div class="split-pane">
+            <div><div class="pane-title"><span>Before</span><span class="small muted" id="clean-before-count"></span></div><pre class="raw-text" id="clean-before" tabindex="0"></pre></div>
+            <div><div class="pane-title"><span>After</span><span class="small muted" id="clean-after-count"></span></div><pre class="raw-text" id="clean-after" tabindex="0" aria-live="polite"></pre></div>
+          </div>
+          <p class="small muted" style="margin-top:8px">Not just tidier: keyword search for "parental" can't match "par-↵ental", and an embedding of it is worse too. In the Chunk Lab, pick the <em>messy PDF extract</em> and compare hit rate with "Clean text first" on and off.</p>
+        </div>
+
+        <h3>3. Preserve structure</h3>
+        <p>Headings, lists, tables and code blocks carry meaning, so don't flatten them into one blob. Tables are the classic failure: once rows are flattened and split, a value loses its column header.</p>
+        <div class="split-pane">
+          <div>
+            <div class="pane-title">Kept as a table</div>
+            <div class="data-table-wrap" style="margin:0"><table class="data">
+              <thead><tr><th scope="col">Add-on</th><th scope="col">Price per month</th><th scope="col">Available on</th></tr></thead>
+              <tbody><tr><td>Extra storage</td><td>₹300</td><td>All plans</td></tr><tr><td>Phone channel</td><td>₹2,500</td><td>Business</td></tr></tbody>
+            </table></div>
+          </div>
+          <div>
+            <div class="pane-title">Flattened and split</div>
+            <p class="flattened">…Extra storage ₹300 All plans Phone channel</p>
+            <p class="flattened">₹2,500 Business SSO and audit log ₹1,800…</p>
+            <p class="small muted">The second chunk has no idea "₹2,500" is a monthly price, or which add-on it belongs to.</p>
+          </div>
+        </div>
+
+        <h3>4. Attach metadata to every chunk</h3>
+        <p>Store useful fields with each chunk. <a data-term="metadata">Metadata</a> lets you filter ("only HR policies"), cite sources ("Refund policy, section 1"), and check freshness ("updated 2026-03-04").</p>
+        <div class="code-block" data-lang="json"><pre><code>{
+  "text": "Refunds after 30 days are allowed only if the item is defective…",
+  "source": "refund-policy.md",
+  "page": 1,
+  "section_path": ["Refund &amp; Returns Policy", "1. Standard refunds"],
+  "doc_type": "policy",
+  "last_updated": "2026-03-04"
+}</code></pre></div>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>Garbage in, garbage chunks out. Parse carefully, clean away the noise, keep structure, and attach metadata <em>before</em> you choose a chunk size.</p>
+        </div>
+      </section>
+
+      <!-- 5. CHUNK LAB ======================================================= -->
+      <section id="s-lab" class="lesson-section" data-section data-title="Chunk Lab playground" data-time="10">
+        <div class="section-head">
+          <span class="section-num">05</span>
+          <h2>Chunk Lab: experiment freely</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>10 min</span>
+        </div>
+        <p>Pick a document, choose a strategy, and drag the sliders. You'll see the chunks, their stats, and, most importantly, what <a data-term="retrieval">retrieval</a> returns for a question. Every preset question has a known answer, so the lab can tell you whether a retrieved chunk actually contains it.</p>
+        <div class="callout try"><span class="callout-title">Try it: three quick experiments</span>
+          <ol>
+            <li>On the <strong>Refund policy</strong>, run Fixed-size at 120 tokens with 0 overlap and ask the refund question. Then add 50% overlap.</li>
+            <li>On the <strong>Pricing page</strong>, compare Fixed-size and Structure-aware with <em>Compare mode</em>. Look at the table.</li>
+            <li>On the <strong>FAQ</strong>, press <em>Run all questions</em> at 1000 tokens, then at 250. What happens to hit rate and chunk size?</li>
+          </ol>
+        </div>
+
+        <div id="lab" class="lab" aria-label="Chunk Lab playground">
+          <p style="padding:20px" class="muted">Loading the playground…</p>
+        </div>
+
+        <p class="small muted" style="margin-top:12px"><a data-term="bm25">BM25</a> is keyword-based ranking. Real RAG systems often use embeddings (<a data-term="semantic-search">semantic search</a>) or a <a data-term="hybrid-search">hybrid</a> of both. The chunking lessons here apply either way.</p>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>Don't judge chunks by how they look. Judge them by whether retrieval returns a chunk that <strong>fully contains the answer</strong>, across many questions. That number is hit rate@k.</p>
+        </div>
+      </section>
+
+      <!-- 6. CHALLENGES ====================================================== -->
+      <section id="s-challenges" class="lesson-section" data-section data-title="Fix-the-Bot challenges" data-time="8">
+        <div class="section-head">
+          <span class="section-num">06</span>
+          <h2>Fix the Bot</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>8 min</span>
+        </div>
+        <div class="mission-brief">
+          <p>You're the new AI engineer at <strong>NimbusDesk</strong> (a fictional company). Customers are reporting wrong answers from the support bot. The LLM is fine. <strong>Fix the chunking.</strong></p>
+        </div>
+        <p style="margin-top:1em">Each challenge starts with settings that fail. Change them and press <strong>Run test</strong>. A test passes when BM25 returns, in its top 3, a chunk that <strong>fully contains</strong> the correct answer (plus any extra rule). Stuck? Hints unlock one at a time.</p>
+        <div id="challenge-summary" class="challenge-summary" aria-live="polite"></div>
+        <div id="challenges"></div>
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>Each failure had a different cure: overlap or sentence-aware boundaries for split answers, structure-aware splitting for tables, contextual headers for orphan chunks, and smaller chunks for precision. Diagnose first, then pick the fix.</p>
+        </div>
+      </section>
+
+      <!-- 7. APPLY =========================================================== -->
+      <section id="s-apply" class="lesson-section" data-section data-title="Use it in your app" data-time="5">
+        <div class="section-head">
+          <span class="section-num">07</span>
+          <h2>Use it in your app</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>5 min</span>
+        </div>
+
+        <h3>Strategy decision guide</h3>
+        <p>Pick the kind of document you're working with:</p>
+        <div id="decision-guide"></div>
+        <p class="small muted">These are <strong>starting points, not rules</strong>. Tune them with an evaluation set of real questions.</p>
+
+        <h3>How to tune: a practical loop</h3>
+        <ol class="loop">
+          <li>Collect ~20 real user questions and mark where each answer lives.</li>
+          <li>Pick 2–3 chunking configs to compare.</li>
+          <li>Measure retrieval <a data-term="hit-rate">hit rate@k</a> (and <a data-term="mrr">MRR</a>) for each.</li>
+          <li>Read the failures: split answer? orphan chunk? broken table?</li>
+          <li>Change one thing, re-measure, repeat.</li>
+        </ol>
+
+        <h3>Code you can use</h3>
+        <p>In Python, the <code>langchain-text-splitters</code> package implements several of these strategies. The Chunk Lab's <strong>Export as code</strong> button writes a snippet that matches your current settings. Here is a typical starting point:</p>
+        <div class="code-block" data-lang="python"><pre><code># pip install langchain-text-splitters tiktoken
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    encoding_name="cl100k_base",  # measure chunk_size in tokens
+    chunk_size=300,
+    chunk_overlap=45,             # 15% overlap
+)
+chunks = splitter.split_text(document_text)</code></pre></div>
+        <p>For Markdown, split on headings first, then size-limit each section:</p>
+        <div class="code-block" data-lang="python"><pre><code>from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+
+header_splitter = MarkdownHeaderTextSplitter(
+    headers_to_split_on=[("#", "h1"), ("##", "h2"), ("###", "h3")],
+    strip_headers=False,  # keep the heading text inside each chunk
+)
+sections = header_splitter.split_text(markdown_text)  # Documents with heading metadata
+
+size_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    encoding_name="cl100k_base", chunk_size=400, chunk_overlap=40
+)
+chunks = size_splitter.split_documents(sections)  # metadata is carried over</code></pre></div>
+
+        <h3>Real-world scenarios</h3>
+        <div class="scenario-grid">
+          <div class="card"><h4>Customer-support bot</h4><p>Help articles and policies full of exceptions ("unless", "only if"). Boundaries and overlap matter most: never separate a rule from its exception.</p></div>
+          <div class="card"><h4>Internal knowledge base</h4><p>HR and IT policies in many formats. Cleaning PDFs and storing metadata (department, last updated) lets you filter and keep answers current.</p></div>
+          <div class="card"><h4>Legal and contract Q&amp;A</h4><p>Split by clause, keep clause numbers in metadata, and cite them. A clause cut in half can reverse its meaning.</p></div>
+          <div class="card"><h4>Developer docs and code assistant</h4><p>Structure-aware splitting for docs; function- or class-level splitting for code, with the file path as metadata. Never split a code block.</p></div>
+          <div class="card"><h4>Healthcare or finance documents</h4><p>Answers need citations and often filters (document type, date, region). Rich metadata and conservative chunk sizes help auditability.</p></div>
+        </div>
+
+        <div class="callout mistake"><span class="callout-title">Common mistakes</span>
+          <ul class="mistake-list">
+            <li>Chunks so small that they lose their meaning.</li>
+            <li>No overlap on prose, so answers get cut at boundaries.</li>
+            <li>Ignoring tables and headings (flattening structure).</li>
+            <li>Not storing metadata, so no citations or filters.</li>
+            <li>One configuration for every document type.</li>
+            <li>Never evaluating retrieval, just trusting that it "looks fine".</li>
+            <li>Mixing up token and character counts (a "500" limit means very different things).</li>
+          </ul>
+        </div>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>Match the strategy to the document type, start from sensible defaults, then let an evaluation set (not intuition) choose the final settings.</p>
+        </div>
+      </section>
+
+      <!-- 8. KNOWLEDGE CHECK ================================================= -->
+      <section id="s-check" class="lesson-section" data-section data-title="Quiz and flashcards" data-time="3">
+        <div class="section-head">
+          <span class="section-num">08</span>
+          <h2>Check your understanding</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>3 min + optional</span>
+        </div>
+        <h3>Quiz</h3>
+        <p>Eight questions. You get feedback as soon as you pick an answer, with an explanation for every option.</p>
+        <div id="quiz"></div>
+
+        <h3>Quick-fire flashcards</h3>
+        <p>Optional review. Use <strong>Study</strong> to flip through at your own pace, or <strong>Quick-fire</strong> to see how many you get right in 60 seconds.</p>
+        <div id="flashcards" class="flash-wrap"></div>
+
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>If a question tripped you up, follow the "Review" link. It takes you to the section that covers it.</p>
+        </div>
+      </section>
+
+      <!-- 9. SUMMARY ========================================================= -->
+      <section id="s-summary" class="lesson-section" data-section data-title="Summary and next steps" data-time="1">
+        <div class="section-head">
+          <span class="section-num">09</span>
+          <h2>Summary</h2>
+          <span class="time-badge"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>1 min</span>
+        </div>
+        <ol class="takeaways">
+          <li>In RAG, the LLM answers only from retrieved chunks, so <strong>chunking quality limits answer quality</strong>.</li>
+          <li>Chunk size trades <strong>context</strong> (bigger) against <strong>precision and cost</strong> (smaller). Measure it in tokens.</li>
+          <li><strong>Overlap</strong> protects answers that sit on a boundary; it must be smaller than the chunk size and adds duplication.</li>
+          <li>Cut where meaning allows: <strong>sentences, headings, tables, topics</strong>. Start with recursive or structure-aware splitting.</li>
+          <li><strong>Clean and structure documents first</strong>, and attach metadata (and contextual headers) so chunks make sense alone.</li>
+          <li>There is no universal best setting. <strong>Evaluate retrieval</strong> (hit rate@k) on real questions and iterate.</li>
+        </ol>
+        <h3>What to learn next</h3>
+        <div class="next-grid">
+          <div class="card"><h4><a data-term="embedding">Embeddings</a> &amp; semantic search</h4><p class="small">How meaning becomes vectors and how similarity search works.</p></div>
+          <div class="card"><h4><a data-term="vector-database">Vector databases</a></h4><p class="small">Indexing, metadata filters and approximate nearest-neighbour search.</p></div>
+          <div class="card"><h4><a data-term="reranking">Reranking</a> &amp; hybrid search</h4><p class="small">Combining BM25 with embeddings, then reordering with a stronger model.</p></div>
+          <div class="card"><h4>RAG evaluation</h4><p class="small">Measuring retrieval and answer quality: faithfulness, relevance, citations.</p></div>
+        </div>
+        <div class="callout key"><span class="callout-title">Key idea</span>
+          <p>You now know how to chunk on purpose: choose a strategy for the document, protect the boundaries, keep the context, and prove it works with numbers.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>Made by <a href="https://github.com/advikaaaa">Advika Awasthi</a> · <a href="https://www.linkedin.com/in/advika-awasthi">LinkedIn</a> · MIT License</p>
+    <p class="small">NimbusDesk and ACME Corp are fictional companies used for teaching examples.</p>
+  </footer>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="glossary" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+    <div class="drawer-head">
+      <button type="button" class="icon-btn" id="drawer-back" hidden><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg><span>All terms</span></button>
+      <h2 id="drawer-title">Glossary</h2>
+      <button type="button" class="icon-btn" id="drawer-close" aria-label="Close glossary"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
+
+  <dialog class="modal" id="export-dialog" aria-labelledby="export-title">
+    <div class="modal-head">
+      <h2 id="export-title">Export as code</h2>
+      <button type="button" class="icon-btn" data-close-dialog aria-label="Close"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="modal-body" id="export-body"></div>
+  </dialog>
+</body>
+</html>
