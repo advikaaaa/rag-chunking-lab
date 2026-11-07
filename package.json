@@ -1,0 +1,16 @@
+{
+  "name": "rag-chunking-lab",
+  "version": "1.0.0",
+  "description": "An interactive lesson on text chunking and document processing for RAG.",
+  "private": true,
+  "type": "module",
+  "author": "Advika Awasthi",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "start": "python -m http.server 8000"
+  },
+  "devDependencies": {
+    "js-tiktoken": "1.0.21"
+  }
+}
