@@ -4,9 +4,6 @@ An interactive, 45-minute lesson on **text chunking and document processing for 
 
 **Live demo:** https://advikaaaa.github.io/rag-chunking-lab/
 
-![Screenshot of ChunkLab](assets/og-image.svg)
-<!-- Replace with a screenshot or GIF of the Chunk Lab once deployed. -->
-
 ## Learning objectives
 
 By the end of the lesson, learners can:
